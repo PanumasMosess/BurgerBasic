@@ -9,7 +9,6 @@ import withErrorHandler from "../../hoc/withErrorHandler/withErrorHandler";
 import Spiner from "../../components/UI/Spiner/Spiner";
 import axios from "../../axios-orders";
 
-
 const INGREDIENT_PRICES = {
   salad: 0.5,
   bacon: 0.7,
@@ -33,12 +32,14 @@ class BurgerBuilder extends Component {
   };
 
   componentDidMount() {
+    console.log(this.props);
     axios
       .get("https://react-my-burger-a2ce1.firebaseio.com/ingredients.json")
       .then(response => {
         this.setState({ ingredients: response.data });
-      }).catch(err => {
-          this.setState({error: true})
+      })
+      .catch(err => {
+        this.setState({ error: true });
       });
   }
 
@@ -96,32 +97,20 @@ class BurgerBuilder extends Component {
 
   purchaseContinueHandler = () => {
     //alert('Your Click!');
-    this.setState({ loading: true });
-    const order = {
-      ingredients: this.state.ingredients,
-      price: this.state.totalPrice,
-      customer: {
-        name: "Panumas Srisook",
-        address: {
-          street: "Mit ta Parb",
-          zipCode: "30340",
-          country: "thailand"
-        },
-        email: "Panumas.dev@gmail.com"
-      },
-      deliveryMethod: "fastTest"
-    };
-
-    axios
-      .post("/orders.json", order)
-      .then(response => {
-        console.log(response);
-        this.setState({ loading: false, purchasing: false });
-      })
-      .catch(err => {
-        console.log(err);
-        this.setState({ loading: false, purchasing: false });
-      });
+    const queryParams = [];
+    for (let i in this.state.ingredients) {
+      queryParams.push(
+        encodeURIComponent(i) +
+          "=" +
+          encodeURIComponent(this.state.ingredients[i])
+      );
+    }
+    queryParams.push("price=" + this.state.totalPrice);
+    const qureyString = queryParams.join("&");
+    this.props.history.push({
+      pathname: "/checkout",
+      search: "?" + qureyString
+    });
   };
 
   render() {
@@ -133,7 +122,11 @@ class BurgerBuilder extends Component {
     }
 
     let orderSummary = null;
-    let burger = this.state.error ? <p style={{textAlign: "center"}}>Ingredients can't be loaded!...</p> : <Spiner />;
+    let burger = this.state.error ? (
+      <p style={{ textAlign: "center" }}>Ingredients can't be loaded!...</p>
+    ) : (
+      <Spiner />
+    );
 
     if (this.state.ingredients) {
       burger = (
